@@ -4,20 +4,24 @@
   "description": "RabbitMQ Backend with NestJS",
   "main": "dist/main.js",
   "scripts": {
-    "build": "nest build",
+    "build": "prisma generate && nest build",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "dev": "nest start --watch",
+    "postinstall": "prisma generate",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:rabbitmq": "./test-rabbitmq.sh",
     "test:quick": "./quick-test.sh",
-    "test:backendnode": "./test-backendnode.sh"
+    "test:backendnode": "./test-backendnode.sh",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio"
   },
   "repository": {
     "type": "git",
@@ -39,6 +43,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.6",
     "@nestjs/swagger": "^11.2.1",
+    "@prisma/client": "^6.17.1",
     "amqplib": "^0.5.5",
     "axios": "^1.7.2",
     "bcrypt": "^6.0.0",
@@ -50,6 +55,7 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
+    "prisma": "^6.17.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "swagger-ui-express": "^5.0.1"

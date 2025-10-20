@@ -38,61 +38,79 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const api_exception_1 = require("../common/exceptions/api.exception");
+const prisma_service_1 = require("../prisma/prisma.service");
 const bcrypt = __importStar(require("bcrypt"));
 let UsersService = class UsersService {
-    constructor() {
-        this.users = [];
+    constructor(prisma) {
+        this.prisma = prisma;
     }
     async create(email, username, password) {
-        const existingUser = this.users.find((user) => user.email === email || user.username === username);
+        const existingUser = await this.prisma.user.findFirst({
+            where: {
+                OR: [{ email }, { username }],
+            },
+        });
         if (existingUser) {
             throw new api_exception_1.UserAlreadyExistsException('Email hoặc username đã tồn tại');
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = {
-            id: this.generateId(),
-            email,
-            username,
-            password: hashedPassword,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
-        this.users.push(newUser);
+        const newUser = await this.prisma.user.create({
+            data: {
+                email,
+                username,
+                password: hashedPassword,
+            },
+        });
         return this.excludePassword(newUser);
     }
     async findByEmail(email) {
-        return this.users.find((user) => user.email === email);
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+        });
+        return user || undefined;
     }
     async findByUsername(username) {
-        return this.users.find((user) => user.username === username);
+        const user = await this.prisma.user.findUnique({
+            where: { username },
+        });
+        return user || undefined;
     }
     async findById(id) {
-        const user = this.users.find((user) => user.id === id);
+        const user = await this.prisma.user.findUnique({
+            where: { id },
+        });
         return user ? this.excludePassword(user) : undefined;
     }
     async findByEmailOrUsername(emailOrUsername) {
-        return this.users.find((user) => user.email === emailOrUsername || user.username === emailOrUsername);
+        const user = await this.prisma.user.findFirst({
+            where: {
+                OR: [{ email: emailOrUsername }, { username: emailOrUsername }],
+            },
+        });
+        return user || undefined;
     }
     async validatePassword(user, password) {
         return bcrypt.compare(password, user.password);
     }
     async getAllUsers() {
-        return this.users.map((user) => this.excludePassword(user));
+        const users = await this.prisma.user.findMany();
+        return users.map((user) => this.excludePassword(user));
     }
     excludePassword(user) {
         const { password, ...userWithoutPassword } = user;
         return userWithoutPassword;
     }
-    generateId() {
-        return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map
