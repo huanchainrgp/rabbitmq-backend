@@ -16,6 +16,7 @@ const core_1 = require("@nestjs/core");
 const auth_module_1 = require("./auth/auth.module");
 const users_module_1 = require("./users/users.module");
 const rabbitmq_module_1 = require("./rabbitmq/rabbitmq.module");
+const prisma_module_1 = require("./prisma/prisma.module");
 const rabbitmq_config_1 = __importDefault(require("./config/rabbitmq.config"));
 const jwt_config_1 = __importDefault(require("./config/jwt.config"));
 const all_exceptions_filter_1 = require("./common/filters/all-exceptions.filter");
@@ -31,6 +32,7 @@ exports.AppModule = AppModule = __decorate([
                 load: [rabbitmq_config_1.default, jwt_config_1.default],
                 envFilePath: '.env',
             }),
+            prisma_module_1.PrismaModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             rabbitmq_module_1.RabbitmqModule,

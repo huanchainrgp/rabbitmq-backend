@@ -4,6 +4,7 @@ import { APP_PIPE, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
+import { PrismaModule } from './prisma/prisma.module';
 import rabbitmqConfig from './config/rabbitmq.config';
 import jwtConfig from './config/jwt.config';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -16,6 +17,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
       load: [rabbitmqConfig, jwtConfig],
       envFilePath: '.env',
     }),
+    PrismaModule,
     AuthModule,
     UsersModule,
     RabbitmqModule,

@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { User, UserWithoutPassword } from './entities/user.entity';
 import { UserAlreadyExistsException } from '../common/exceptions/api.exception';
+import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  // In-memory storage (replace with database in production)
-  private users: User[] = [];
+  constructor(private prisma: PrismaService) {}
 
   async create(
     email: string,
@@ -14,9 +14,11 @@ export class UsersService {
     password: string,
   ): Promise<UserWithoutPassword> {
     // Check if user already exists
-    const existingUser = this.users.find(
-      (user) => user.email === email || user.username === username,
-    );
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ email }, { username }],
+      },
+    });
 
     if (existingUser) {
       throw new UserAlreadyExistsException('Email hoặc username đã tồn tại');
@@ -25,42 +27,49 @@ export class UsersService {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
-    const newUser: User = {
-      id: this.generateId(),
-      email,
-      username,
-      password: hashedPassword,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    this.users.push(newUser);
+    // Create new user in database
+    const newUser = await this.prisma.user.create({
+      data: {
+        email,
+        username,
+        password: hashedPassword,
+      },
+    });
 
     // Return user without password
     return this.excludePassword(newUser);
   }
 
   async findByEmail(email: string): Promise<User | undefined> {
-    return this.users.find((user) => user.email === email);
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    return user || undefined;
   }
 
   async findByUsername(username: string): Promise<User | undefined> {
-    return this.users.find((user) => user.username === username);
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+    });
+    return user || undefined;
   }
 
   async findById(id: string): Promise<UserWithoutPassword | undefined> {
-    const user = this.users.find((user) => user.id === id);
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
     return user ? this.excludePassword(user) : undefined;
   }
 
   async findByEmailOrUsername(
     emailOrUsername: string,
   ): Promise<User | undefined> {
-    return this.users.find(
-      (user) =>
-        user.email === emailOrUsername || user.username === emailOrUsername,
-    );
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ email: emailOrUsername }, { username: emailOrUsername }],
+      },
+    });
+    return user || undefined;
   }
 
   async validatePassword(user: User, password: string): Promise<boolean> {
@@ -68,15 +77,12 @@ export class UsersService {
   }
 
   async getAllUsers(): Promise<UserWithoutPassword[]> {
-    return this.users.map((user) => this.excludePassword(user));
+    const users = await this.prisma.user.findMany();
+    return users.map((user) => this.excludePassword(user));
   }
 
   private excludePassword(user: User): UserWithoutPassword {
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword;
-  }
-
-  private generateId(): string {
-    return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }
